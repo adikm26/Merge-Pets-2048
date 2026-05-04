@@ -1,30 +1,24 @@
 {
-  "name": "template-vite-ts",
-  "description": "A Phaser 3 TypeScript template using Vite.",
-  "version": "1.4.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/phaserjs/template-vite-ts.git"
-  },
-  "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
-  "license": "MIT",
-  "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
-  "bugs": {
-    "url": "https://github.com/phaserjs/template-vite-ts/issues"
-  },
-  "homepage": "https://github.com/phaserjs/template-vite-ts#readme",
+  "name": "merge-pets-2048",
+  "description": "Merge Pets 2048 — HTML5 merge game for Yandex Games (Phaser 3 + TypeScript + Vite + Matter.js).",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "node log.js dev & vite --config vite/config.dev.mjs",
-    "build": "node log.js build & vite build --config vite/config.prod.mjs",
-    "dev-nolog": "vite --config vite/config.dev.mjs",
-    "build-nolog": "vite build --config vite/config.prod.mjs"
+    "dev": "vite --config vite/config.dev.mjs",
+    "build": "tsc --noEmit && vite build --config vite/config.prod.mjs",
+    "build-nocheck": "vite build --config vite/config.prod.mjs",
+    "preview": "vite preview --config vite/config.prod.mjs --port 8080",
+    "typecheck": "tsc --noEmit",
+    "zip": "node scripts/build-zip.mjs"
   },
+  "license": "MIT",
   "devDependencies": {
     "typescript": "~5.7.2",
     "vite": "^6.3.1"
   },
   "dependencies": {
-    "phaser": "4.0.0",
+    "phaser": "^3.80.1",
     "terser": "^5.39.0"
   }
 }

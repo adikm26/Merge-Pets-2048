@@ -1,158 +1,119 @@
-# Phaser Vite TypeScript Template
+# Merge Pets 2048
 
-This is a Phaser project template that uses Vite for bundling. It supports hot-reloading for quick development workflow, includes TypeScript support and scripts to generate production-ready builds.
+HTML5 merge game for [Yandex.Games](https://yandex.ru/games/) built on
+**Phaser 3 + TypeScript + Vite + Matter.js**. Designed for portrait 9:16
+mobile play with a desktop fallback (centered canvas + framing background).
 
-**[This Template is also available as a JavaScript version.](https://github.com/phaserjs/template-vite)**
+![](public/favicon.png)
 
-### Versions
+## Features
 
-This template has been updated for:
-
-- [Phaser 4](https://github.com/phaserjs/phaser)
-- [Vite 6.3.1](https://github.com/vitejs/vite)
-- [TypeScript 5.7.2](https://github.com/microsoft/TypeScript)
-
-![screenshot](screenshot.png)
+- 10-level merge progression (мышка → мега-капибара).
+- Matter.js physics with circular collision bodies and object pooling for
+  pets, particles, and FX.
+- Yandex SDK wrapper (`src/sdk/yandexSdk.ts`) with stubs that work in dev
+  builds: `initYandexSdk`, `showInterstitialAd`, `showRewardedAd`,
+  `saveToLeaderboard`, `loadPlayerData`, `savePlayerData`.
+- Rewarded ad rewards: `continue_after_game_over`, `remove_bottom_3`,
+  `double_coins`, `free_skin_chest`. All ads pause physics + audio.
+- Coin economy + 4 skins (default/cats/capybaras/sweet) with localStorage
+  persistence and Yandex player-data sync.
+- Scenes: Boot → Preloader (progress bar) → MainMenu → Game → GameOver
+  → Shop / Settings.
+- Responsive: portrait 9:16 design surface scales to fit any viewport.
 
 ## Requirements
 
-[Node.js](https://nodejs.org) is required to install dependencies and run scripts via `npm`.
+- [Node.js](https://nodejs.org/) **18+** (tested with Node 22).
 
-## Available Commands
+## Available commands
 
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install project dependencies |
-| `npm run dev` | Launch a development web server |
-| `npm run build` | Create a production build in the `dist` folder |
-| `npm run dev-nolog` | Launch a development web server without sending anonymous data (see "About log.js" below) |
-| `npm run build-nolog` | Create a production build in the `dist` folder without sending anonymous data (see "About log.js" below) |
+| Command            | Description                                                  |
+|--------------------|--------------------------------------------------------------|
+| `npm install`      | Install dependencies (Phaser, Vite, TypeScript, Terser).     |
+| `npm run dev`      | Launch the Vite dev server on `http://localhost:8080`.       |
+| `npm run build`    | Type-check and bundle to `dist/`.                            |
+| `npm run preview`  | Serve the production build locally for verification.         |
+| `npm run zip`      | Pack `dist/` into `merge-pets-2048.zip` for Yandex.Games.    |
+| `npm run typecheck`| Run `tsc --noEmit` only.                                     |
 
-## Writing Code
+## Project layout
 
-After cloning the repo, run `npm install` from your project directory. Then, you can start the local development server by running `npm run dev`.
+```
+src/
+  main.ts                 # Boot entry — DOMContentLoaded → startGame()
+  game/
+    main.ts               # Phaser config (Matter physics, FIT scale).
+    config/
+      levels.ts           # 10 animal level definitions + radii + scoring.
+      skins.ts            # Skin catalog + texture-key helpers.
+      economy.ts          # Coin / score / pacing tunables.
+    objects/
+      PetPool.ts          # Object pool for Matter sprites.
+      UiButton.ts         # Reusable container button.
+    scenes/
+      BootScene.ts        # Kick off SDK + state load.
+      PreloaderScene.ts   # Progress bar; preloads every skin × level.
+      MainMenuScene.ts    # Play / Shop / Settings + best score.
+      GameScene.ts        # Drag, drop, merge, danger line, pause.
+      GameOverScene.ts    # Score, best, rewarded ads, replay/menu.
+      ShopScene.ts        # Buy + equip skins.
+      SettingsScene.ts    # Sound / music toggles.
+    state.ts              # localStorage + Yandex player-data sync.
+  sdk/
+    yandexSdk.ts          # Yandex.Games SDK wrapper with debug fallbacks.
 
-The local development server runs on `http://localhost:8080` by default. Please see the Vite documentation if you wish to change this, or add SSL support.
+public/
+  assets/
+    animals/levelN.png    # default skin (10 PNGs).
+    skins/cats/levelN.png
+    skins/capybaras/levelN.png
+    skins/sweet/levelN.png
+    bg.png                # Background frame.
+  favicon.png
+  style.css
 
-Once the server is running you can edit any of the files in the `src` folder. Vite will automatically recompile your code and then reload the browser.
-
-## Template Project Structure
-
-We have provided a default project structure to get you started. This is as follows:
-
-## Template Project Structure
-
-We have provided a default project structure to get you started:
-
-| Path                         | Description                                                |
-|------------------------------|------------------------------------------------------------|
-| `index.html`                 | A basic HTML page to contain the game.                     |
-| `public/assets`              | Game sprites, audio, etc. Served directly at runtime.      |
-| `public/style.css`           | Global layout styles.                                      |
-| `src/main.ts`                | Application bootstrap.                                     |
-| `src/game`                   | Folder containing the game code.                           |
-| `src/game/main.ts`           | Game entry point: configures and starts the game.          |
-| `src/game/scenes`            | Folder with all Phaser game scenes.                        | 
-
-
-## Handling Assets
-
-Vite supports loading assets via JavaScript module `import` statements.
-
-This template provides support for both embedding assets and also loading them from a static folder. To embed an asset, you can import it at the top of the JavaScript file you are using it in:
-
-```js
-import logoImg from './assets/logo.png'
+scripts/build-zip.mjs     # Validate dist + zip it for Yandex.Games.
 ```
 
-To load static files such as audio files, videos, etc place them into the `public/assets` folder. Then you can use this path in the Loader calls within Phaser:
+## Yandex.Games — packaging the build
 
-```js
-preload ()
-{
-    //  This is an example of an imported bundled image.
-    //  Remember to import it at the top of this file
-    this.load.image('logo', logoImg);
+1. `npm install`
+2. `npm run build` (creates `dist/index.html` + bundled assets).
+3. `npm run zip` (validates and zips `dist/` to `merge-pets-2048.zip`).
+4. Upload `merge-pets-2048.zip` to the [Yandex Games developer console](https://yandex.ru/dev/games/doc/dg/concepts/before-create.html).
 
-    //  This is an example of loading a static image
-    //  from the public/assets folder:
-    this.load.image('background', 'assets/bg.png');
-}
-```
+The `zip` script automatically rejects file names with spaces or non-ASCII
+characters, which Yandex.Games does not allow.
 
-When you issue the `npm run build` command, all static assets are automatically copied to the `dist/assets` folder.
+### Ad placement rules
 
-## Deploying to Production
+The game shows ads only:
 
-After you run the `npm run build` command, your code will be built into a single bundle and saved to the `dist` folder, along with any other assets your project imported, or stored in the public assets folder.
+- on user-tap rewarded buttons in `GameOverScene` (continue, x2 coins,
+  free-skin chest);
+- via explicit `showInterstitialAd()` calls between gameplay sessions
+  (the menus call this defensively when returning from a run).
 
-In order to deploy your game, you will need to upload *all* of the contents of the `dist` folder to a public facing web server.
+No ads are triggered while a pet is mid-air. `GameScene.applyContinueReward()`
+is called only after the SDK promise resolves.
 
-## Customizing the Template
+### Yandex SDK loading
 
-### Vite
+`index.html` includes
+`<script src="https://yandex.ru/games/sdk/v2"></script>` plus an `onerror`
+guard. When the SDK is missing (local dev, build preview), `yandexSdk.ts`
+flips into debug mode and grants rewards immediately so designers can
+iterate without needing a Yandex auth session.
 
-If you want to customize your build, such as adding plugin (i.e. for loading CSS or fonts), you can modify the `vite/config.*.mjs` file for cross-project changes, or you can modify and/or create new configuration files and target them in specific npm tasks inside of `package.json`. Please see the [Vite documentation](https://vitejs.dev/) for more information.
+## Asset credits
 
-## About log.js
+- Animal sprites: [Kenney Animal Pack](https://kenney.nl/assets/animal-pack)
+  and [Animal Pack Redux](https://kenney.nl/assets/animal-pack-redux),
+  used under the CC0 license. The `default` skin uses round filled sprites,
+  `cats` uses the round-outline variant, `capybaras` uses square sprites,
+  and `sweet` uses square-no-detail sprites.
 
-If you inspect our node scripts you will see there is a file called `log.js`. This file makes a single silent API call to a domain called `gryzor.co`. This domain is owned by Phaser Studio Inc. The domain name is a homage to one of our favorite retro games.
+## License
 
-We send the following 3 pieces of data to this API: The name of the template being used (vue, react, etc). If the build was 'dev' or 'prod' and finally the version of Phaser being used.
-
-At no point is any personal data collected or sent. We don't know about your project files, device, browser or anything else. Feel free to inspect the `log.js` file to confirm this.
-
-Why do we do this? Because being open source means we have no visible metrics about which of our templates are being used. We work hard to maintain a large and diverse set of templates for Phaser developers and this is our small anonymous way to determine if that work is actually paying off, or not. In short, it helps us ensure we're building the tools for you.
-
-However, if you don't want to send any data, you can use these commands instead:
-
-Dev:
-
-```bash
-npm run dev-nolog
-```
-
-Build:
-
-```bash
-npm run build-nolog
-```
-
-Or, to disable the log entirely, simply delete the file `log.js` and remove the call to it in the `scripts` section of `package.json`:
-
-Before:
-
-```json
-"scripts": {
-    "dev": "node log.js dev & dev-template-script",
-    "build": "node log.js build & build-template-script"
-},
-```
-
-After:
-
-```json
-"scripts": {
-    "dev": "dev-template-script",
-    "build": "build-template-script"
-},
-```
-
-Either of these will stop `log.js` from running. If you do decide to do this, please could you at least join our Discord and tell us which template you're using! Or send us a quick email. Either will be super-helpful, thank you.
-
-## Join the Phaser Community!
-
-We love to see what developers like you create with Phaser! It really motivates us to keep improving. So please join our community and show-off your work 😄
-
-**Visit:** The [Phaser website](https://phaser.io) and follow on [Phaser Twitter](https://twitter.com/phaser_)<br />
-**Play:** Some of the amazing games [#madewithphaser](https://twitter.com/search?q=%23madewithphaser&src=typed_query&f=live)<br />
-**Learn:** [API Docs](https://newdocs.phaser.io), [Support Forum](https://phaser.discourse.group/) and [StackOverflow](https://stackoverflow.com/questions/tagged/phaser-framework)<br />
-**Discord:** Join us on [Discord](https://discord.gg/phaser)<br />
-**Code:** 2000+ [Examples](https://labs.phaser.io)<br />
-**Read:** The [Phaser World](https://phaser.io/community/newsletter) Newsletter<br />
-
-Created by [Phaser Studio](mailto:support@phaser.io). Powered by coffee, anime, pixels and love.
-
-The Phaser logo and characters are &copy; 2011 - 2025 Phaser Studio Inc.
-
-All rights reserved.
+MIT — see `LICENSE`.

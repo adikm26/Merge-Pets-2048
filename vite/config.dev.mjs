@@ -9,9 +9,10 @@ export default defineConfig({
                     phaser: ['phaser']
                 }
             }
-        },
+        }
     },
     server: {
-        port: 8080
+        port: 8080,
+        host: true
     }
 });

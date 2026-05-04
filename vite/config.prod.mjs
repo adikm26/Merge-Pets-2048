@@ -1,25 +1,14 @@
 import { defineConfig } from 'vite';
 
-const phasermsg = () => {
-    return {
-        name: 'phasermsg',
-        buildStart() {
-            process.stdout.write(`Building for production...\n`);
-        },
-        buildEnd() {
-            const line = "---------------------------------------------------------";
-            const msg = `❤️❤️❤️ Tell us about your game! - games@phaser.io ❤️❤️❤️`;
-            process.stdout.write(`${line}\n${msg}\n${line}\n`);
-            
-            process.stdout.write(`✨ Done ✨\n`);
-        }
-    }
-}   
-
 export default defineConfig({
     base: './',
-    logLevel: 'warning',
+    logLevel: 'warn',
     build: {
+        target: 'es2020',
+        outDir: 'dist',
+        emptyOutDir: true,
+        sourcemap: false,
+        chunkSizeWarningLimit: 1500,
         rollupOptions: {
             output: {
                 manualChunks: {
@@ -30,18 +19,13 @@ export default defineConfig({
         minify: 'terser',
         terserOptions: {
             compress: {
-                passes: 2
+                passes: 2,
+                drop_console: false
             },
             mangle: true,
             format: {
                 comments: false
             }
         }
-    },
-    server: {
-        port: 8080
-    },
-    plugins: [
-        phasermsg()
-    ]
+    }
 });
