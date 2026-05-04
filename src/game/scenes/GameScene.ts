@@ -42,6 +42,8 @@ export class GameScene extends Phaser.Scene {
     private score = 0;
     private coinsEarnedThisRun = 0;
     private coinsBuffer = 0;
+    /** Coins already flushed to the player wallet this run. */
+    private coinsCreditedThisRun = 0;
 
     private dangerLineY = GAMEPLAY.dangerLineY;
     private gameOverTriggered = false;
@@ -69,12 +71,20 @@ export class GameScene extends Phaser.Scene {
     }
 
     init(data: { continueRun?: boolean } = {}): void {
+        // Phaser keeps the scene instance between scene.start calls — every
+        // mutable field has to be reset explicitly so a Replay starts clean.
+        this.heldPet = null;
+        this.nextPreview = null;
+        this.dropCooldownUntil = 0;
+        this.inputUnlockAt = 0;
+        this.isPaused = false;
+        this.gameOverTriggered = false;
         if (!data.continueRun) {
             this.score = 0;
             this.coinsEarnedThisRun = 0;
+            this.coinsCreditedThisRun = 0;
             this.coinsBuffer = 0;
             this.continueUsed = false;
-            this.gameOverTriggered = false;
         }
     }
 
@@ -218,7 +228,7 @@ export class GameScene extends Phaser.Scene {
             fontFamily: 'sans-serif', fontSize: '24px', color: '#ffd166',
         }).setOrigin(0, 0).setDepth(20);
 
-        this.coinsText = this.add.text(designWidth - 40, 28, `🪙 ${getState().coins + this.coinsEarnedThisRun}`, {
+        this.coinsText = this.add.text(designWidth - 40, 28, `🪙 ${getState().coins + this.coinsEarnedThisRun - this.coinsCreditedThisRun}`, {
             fontFamily: 'sans-serif', fontSize: '24px', color: '#ffd166',
             fontStyle: 'bold',
         }).setOrigin(1, 0).setDepth(20);
@@ -239,7 +249,7 @@ export class GameScene extends Phaser.Scene {
     private updateHud(): void {
         this.scoreText.setText(`${this.score}`);
         this.bestText.setText(`Рекорд: ${Math.max(getState().bestScore, this.score)}`);
-        this.coinsText.setText(`🪙 ${getState().coins + this.coinsEarnedThisRun}`);
+        this.coinsText.setText(`🪙 ${getState().coins + this.coinsEarnedThisRun - this.coinsCreditedThisRun}`);
     }
 
     private updateNextPreview(): void {
@@ -358,10 +368,17 @@ export class GameScene extends Phaser.Scene {
             merged.petHeld = false;
             merged.setStatic(false);
             merged.setIgnoreGravity(false);
-            merged.setScale(0.6);
+            merged.hasEnteredField = true; // merged in-field, never count as breach.
+            // Preserve the texture-normalised display size set by PetPool.spawn:
+            // start at 60% of those scales and animate back, otherwise the merged
+            // pet would snap to the raw texture size after the tween.
+            const targetScaleX = merged.scaleX;
+            const targetScaleY = merged.scaleY;
+            merged.setScale(targetScaleX * 0.6, targetScaleY * 0.6);
             this.tweens.add({
                 targets: merged,
-                scale: 1,
+                scaleX: targetScaleX,
+                scaleY: targetScaleY,
                 ease: Phaser.Math.Easing.Back.Out,
                 duration: 220,
             });
@@ -454,14 +471,19 @@ export class GameScene extends Phaser.Scene {
         if (this.gameOverTriggered) return;
         this.gameOverTriggered = true;
         const isNewBest = updateBestScore(this.score);
-        const finalCoins = this.coinsEarnedThisRun;
-        addCoins(finalCoins);
+        // Only flush the run earnings that have NOT been credited yet, so a
+        // rewarded continue followed by another game over doesn't pay twice.
+        const uncredited = this.coinsEarnedThisRun - this.coinsCreditedThisRun;
+        if (uncredited > 0) {
+            addCoins(uncredited);
+            this.coinsCreditedThisRun = this.coinsEarnedThisRun;
+        }
         // Game over scene takes over (overlay).
         this.scene.pause();
         this.matter.pause();
         this.scene.launch('GameOverScene', {
             score: this.score,
-            coinsEarned: finalCoins,
+            coinsEarned: this.coinsEarnedThisRun,
             isNewBest,
             continueUsed: this.continueUsed,
         });
